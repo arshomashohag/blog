@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">✦ Blog</a>
+            <ul class="nav-links">
+                <li><a href="/blogs.html">All Posts</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <section class="hero">
+            <div class="hero-content">
+                <span class="hero-label">Latest Post</span>
+                <h1 id="latest-title" class="hero-title">Loading...</h1>
+                <p id="latest-excerpt" class="hero-excerpt"></p>
+                <div class="hero-meta">
+                    <span id="latest-category" class="category-badge"></span>
+                    <span id="latest-date" class="post-date"></span>
+                </div>
+                <a href="#" id="latest-read-btn" class="btn btn-primary">Read Article →</a>
+            </div>
+            <div class="hero-decoration">
+                <div class="decoration-circle"></div>
+                <div class="decoration-line"></div>
+            </div>
+        </section>
+
+        <section class="recent-posts">
+            <h2 class="section-title">Recent Posts</h2>
+            <div id="posts-grid" class="posts-grid">
+                <!-- Posts loaded dynamically -->
+            </div>
+            <div class="view-all-container">
+                <a href="/blogs.html" class="btn btn-outline">View All Posts</a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 Blog. Crafted with care.</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Load latest post
+                const latest = await BlogAPI.getLatestPost();
+                if (latest) {
+                    document.getElementById('latest-title').textContent = latest.title;
+                    document.getElementById('latest-excerpt').textContent = latest.excerpt;
+                    document.getElementById('latest-category').textContent = latest.category || 'Uncategorized';
+                    document.getElementById('latest-date').textContent = formatDate(latest.published_at);
+                    document.getElementById('latest-read-btn').href = `/blog.html?id=${latest.id}`;
+                }
+
+                // Load recent posts (skip first since it's featured)
+                const posts = await BlogAPI.getPosts(6);
+                const grid = document.getElementById('posts-grid');
+                
+                if (posts.length > 1) {
+                    grid.innerHTML = posts.slice(1, 4).map(post => `
+                        <article class="post-card">
+                            <div class="post-card-content">
+                                <span class="category-badge">${post.category || 'Uncategorized'}</span>
+                                <h3 class="post-card-title">${escapeHtml(post.title)}</h3>
+                                <p class="post-card-excerpt">${escapeHtml(post.excerpt || '')}</p>
+                                <div class="post-card-footer">
+                                    <span class="post-date">${formatDate(post.published_at)}</span>
+                                    <a href="/blog.html?id=${post.id}" class="read-link">Read →</a>
+                                </div>
+                            </div>
+                        </article>
+                    `).join('');
+                } else {
+                    grid.innerHTML = '<p class="no-posts">No other posts yet.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                document.getElementById('latest-title').textContent = 'Welcome to the Blog';
+                document.getElementById('latest-excerpt').textContent = 'No posts published yet. Check back soon!';
+            }
+        });
+    </script>
+</body>
+</html>

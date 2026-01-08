@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor - Blog Admin</title>
+    <!-- Critical CSS to prevent layout shift - must load before external CSS -->
+    <style>
+        :root {
+            --color-bg: #faf9f7;
+            --color-bg-secondary: #ffffff;
+            --color-border: #e5e5e5;
+            --color-border-light: #f0f0f0;
+            --spacing-sm: 1rem;
+            --spacing-md: 1.5rem;
+            --spacing-lg: 2rem;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--color-bg); min-height: 100vh; }
+        .editor-main { max-width: 1400px; margin: 0 auto; padding: var(--spacing-lg) var(--spacing-md); }
+        .editor-form { display: flex; flex-direction: column; gap: var(--spacing-lg); }
+        .editor-header { display: flex; justify-content: space-between; align-items: center; }
+        .editor-grid { display: grid; grid-template-columns: 1fr 300px; gap: var(--spacing-lg); }
+        .editor-content { display: flex; flex-direction: column; gap: var(--spacing-md); }
+        .form-group { margin-bottom: var(--spacing-md); }
+        .input { width: 100%; padding: var(--spacing-sm) var(--spacing-md); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-family: inherit; font-size: 1rem; background: var(--color-bg-secondary); }
+        .input-large { font-size: 1.25rem; padding: var(--spacing-md); }
+        .editor-wrapper { min-height: 550px; background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+        #editor { min-height: 500px; }
+        .editor-sidebar { display: flex; flex-direction: column; gap: var(--spacing-md); }
+        .sidebar-card { background: var(--color-bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); }
+        @media (max-width: 768px) { .editor-grid { grid-template-columns: 1fr; } }
+    </style>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar admin-navbar">
+        <div class="nav-container">
+            <a href="/admin/" class="logo">✦ Blog Admin</a>
+            <ul class="nav-links">
+                <li><a href="/admin/">← Dashboard</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="editor-main">
+        <form id="post-form" class="editor-form">
+            <div class="editor-header">
+                <h1 id="page-title">New Post</h1>
+                <div class="editor-actions">
+                    <button type="button" id="save-draft-btn" class="btn btn-outline">Save Draft</button>
+                    <button type="button" id="publish-btn" class="btn btn-primary">Publish</button>
+                </div>
+            </div>
+
+            <div class="editor-grid">
+                <div class="editor-content">
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" id="title" class="input input-large" placeholder="Enter post title" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Content</label>
+                        <div id="editor-container" class="editor-wrapper">
+                            <!-- Placeholder toolbar to prevent layout shift -->
+                            <div class="ql-toolbar-placeholder" style="height:42px;border-bottom:1px solid #e5e5e5;background:#fff;"></div>
+                            <div id="editor" style="min-height:500px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="editor-sidebar">
+                    <div class="sidebar-card">
+                        <h3>Post Settings</h3>
+                        
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <div class="category-input-wrapper">
+                                <input type="text" id="category" class="input" list="category-list" placeholder="Select or type new category">
+                                <datalist id="category-list">
+                                    <!-- Categories loaded dynamically -->
+                                </datalist>
+                            </div>
+                            <small class="form-hint">Select existing or type to create new</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="excerpt">Excerpt</label>
+                            <textarea id="excerpt" class="input" rows="3" placeholder="Brief summary (auto-generated if empty)"></textarea>
+                        </div>
+
+                        <div class="form-group" id="status-group" style="display: none;">
+                            <label>Current Status</label>
+                            <span id="current-status" class="status-badge"></span>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-card" id="danger-zone" style="display: none;">
+                        <h3>Danger Zone</h3>
+                        <button type="button" id="delete-btn" class="btn btn-danger btn-block">Delete Post</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check auth
+            if (!AdminAPI.isAuthenticated()) {
+                window.location.href = '/admin/';
+                return;
+            }
+
+            const valid = await AdminAPI.verifyToken();
+            if (!valid) {
+                window.location.href = '/admin/';
+                return;
+            }
+
+            // Get post ID from URL (if editing)
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('id');
+            const isEditing = !!postId;
+
+            // Update page title
+            if (isEditing) {
+                document.getElementById('page-title').textContent = 'Edit Post';
+                document.title = 'Edit Post - Blog Admin';
+                document.getElementById('status-group').style.display = 'block';
+                document.getElementById('danger-zone').style.display = 'block';
+            }
+
+            // Remove placeholder toolbar before Quill initializes
+            const placeholder = document.querySelector('.ql-toolbar-placeholder');
+            if (placeholder) placeholder.remove();
+            
+            // Initialize Quill editor
+            const quill = new Quill('#editor', {
+                theme: 'snow',
+                placeholder: 'Write your post content here...',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['blockquote', 'code-block'],
+                        ['link', 'image'],
+                        ['clean']
+                    ]
+                }
+            });
+
+            // Add fullscreen button to Quill toolbar
+            const editorWrapper = document.getElementById('editor-container');
+            const toolbar = editorWrapper.querySelector('.ql-toolbar');
+            
+            // Create fullscreen button
+            const fullscreenBtn = document.createElement('button');
+            fullscreenBtn.type = 'button';
+            fullscreenBtn.className = 'ql-fullscreen';
+            fullscreenBtn.title = 'Toggle fullscreen (Esc to exit)';
+            fullscreenBtn.innerHTML = `
+                <svg class="expand-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                </svg>
+                <svg class="collapse-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                    <path d="M4 14h6v6m10-10h-6V4m0 6 6-6M4 20l6-6"/>
+                </svg>
+            `;
+            
+            // Add button to toolbar
+            const toolbarGroup = document.createElement('span');
+            toolbarGroup.className = 'ql-formats ql-fullscreen-group';
+            toolbarGroup.appendChild(fullscreenBtn);
+            toolbar.appendChild(toolbarGroup);
+
+            // Fullscreen toggle function
+            function toggleFullscreen() {
+                editorWrapper.classList.toggle('fullscreen');
+                document.body.classList.toggle('editor-fullscreen-active');
+                const isFullscreen = editorWrapper.classList.contains('fullscreen');
+                fullscreenBtn.querySelector('.expand-icon').style.display = isFullscreen ? 'none' : 'block';
+                fullscreenBtn.querySelector('.collapse-icon').style.display = isFullscreen ? 'block' : 'none';
+                fullscreenBtn.title = isFullscreen ? 'Exit fullscreen (Esc)' : 'Toggle fullscreen (Esc to exit)';
+                
+                // Scroll editor to top and focus
+                setTimeout(() => {
+                    const qlEditor = editorWrapper.querySelector('.ql-editor');
+                    const qlContainer = editorWrapper.querySelector('.ql-container');
+                    if (qlEditor) qlEditor.scrollTop = 0;
+                    if (qlContainer) qlContainer.scrollTop = 0;
+                    quill.setSelection(0, 0);
+                    quill.focus();
+                }, 50);
+            }
+
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+            // Exit fullscreen on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && editorWrapper.classList.contains('fullscreen')) {
+                    toggleFullscreen();
+                }
+            });
+
+            // Load categories
+            async function loadCategories() {
+                try {
+                    const categories = await AdminAPI.getCategories();
+                    const datalist = document.getElementById('category-list');
+                    
+                    categories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.name;
+                        datalist.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading categories:', error);
+                }
+            }
+
+            // Load post if editing
+            async function loadPost() {
+                if (!isEditing) return;
+
+                try {
+                    const post = await AdminAPI.getPost(postId);
+                    
+                    document.getElementById('title').value = post.title;
+                    document.getElementById('category').value = post.category || '';
+                    document.getElementById('excerpt').value = post.excerpt || '';
+                    
+                    // Set editor content
+                    if (post.content_delta) {
+                        try {
+                            const delta = JSON.parse(post.content_delta);
+                            quill.setContents(delta);
+                        } catch {
+                            // Fallback to HTML if delta parsing fails
+                            quill.root.innerHTML = post.content_html || '';
+                        }
+                    }
+
+                    // Update status badge
+                    const statusBadge = document.getElementById('current-status');
+                    statusBadge.textContent = post.status;
+                    statusBadge.className = `status-badge status-${post.status.toLowerCase()}`;
+
+                    // Update publish button text
+                    if (post.status === 'PUBLISHED') {
+                        document.getElementById('publish-btn').textContent = 'Update';
+                    }
+                } catch (error) {
+                    showToast(`Error loading post: ${error.message}`, 'error');
+                    setTimeout(() => window.location.href = '/admin/', 2000);
+                }
+            }
+
+            // Get form data
+            function getFormData() {
+                const categoryValue = document.getElementById('category').value.trim();
+                return {
+                    title: document.getElementById('title').value.trim(),
+                    content_delta: JSON.stringify(quill.getContents()),
+                    content_html: quill.root.innerHTML,
+                    category: categoryValue || null,
+                    excerpt: document.getElementById('excerpt').value.trim() || null,
+                };
+            }
+
+            // Validate form
+            function validateForm() {
+                const title = document.getElementById('title').value.trim();
+                const content = quill.getText().trim();
+
+                if (!title) {
+                    showToast('Please enter a title', 'error');
+                    return false;
+                }
+
+                if (!content) {
+                    showToast('Please enter some content', 'error');
+                    return false;
+                }
+
+                return true;
+            }
+
+            // Save draft
+            document.getElementById('save-draft-btn').addEventListener('click', async () => {
+                if (!validateForm()) return;
+
+                const data = { ...getFormData(), status: 'DRAFT' };
+
+                try {
+                    if (isEditing) {
+                        await AdminAPI.updatePost(postId, data);
+                        showToast('Draft saved', 'success');
+                    } else {
+                        const post = await AdminAPI.createPost(data);
+                        showToast('Draft created', 'success');
+                        // Redirect to edit mode
+                        window.location.href = `editor.html?id=${post.id}`;
+                    }
+                } catch (error) {
+                    showToast(`Error: ${error.message}`, 'error');
+                }
+            });
+
+            // Publish
+            document.getElementById('publish-btn').addEventListener('click', async () => {
+                if (!validateForm()) return;
+
+                const data = { ...getFormData(), status: 'PUBLISHED' };
+
+                try {
+                    let newPostId = postId;
+                    if (isEditing) {
+                        await AdminAPI.updatePost(postId, data);
+                        showToast('Post published', 'success');
+                    } else {
+                        const post = await AdminAPI.createPost(data);
+                        newPostId = post.id;
+                        showToast('Post published', 'success');
+                        // Update URL without reloading page
+                        window.history.replaceState({}, '', `editor.html?id=${post.id}`);
+                    }
+                    
+                    // Update UI
+                    const statusBadge = document.getElementById('current-status');
+                    statusBadge.textContent = 'PUBLISHED';
+                    statusBadge.className = 'status-badge status-published';
+                    document.getElementById('publish-btn').textContent = 'Update';
+                    document.getElementById('status-group').style.display = 'block';
+                    document.getElementById('danger-zone').style.display = 'block';
+                } catch (error) {
+                    showToast(`Error: ${error.message}`, 'error');
+                }
+            });
+
+            // Delete post
+            document.getElementById('delete-btn').addEventListener('click', async () => {
+                if (!await confirmAction('Are you sure you want to delete this post? This cannot be undone.')) {
+                    return;
+                }
+
+                try {
+                    await AdminAPI.deletePost(postId);
+                    showToast('Post deleted', 'success');
+                    setTimeout(() => window.location.href = '/admin/', 1000);
+                } catch (error) {
+                    showToast(`Error: ${error.message}`, 'error');
+                }
+            });
+
+            // Auto-save draft every 30 seconds
+            let autoSaveTimer;
+            quill.on('text-change', () => {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(async () => {
+                    if (isEditing && document.getElementById('title').value.trim()) {
+                        const data = getFormData();
+                        try {
+                            await AdminAPI.updatePost(postId, data);
+                            console.log('Auto-saved');
+                        } catch (error) {
+                            console.error('Auto-save failed:', error);
+                        }
+                    }
+                }, 30000);
+            });
+
+            // Initialize
+            await loadCategories();
+            await loadPost();
+        });
+    </script>
+</body>
+</html>

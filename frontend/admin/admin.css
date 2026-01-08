@@ -1,0 +1,604 @@
+/* Admin Panel Styles */
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--color-bg-secondary);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    max-width: 400px;
+    width: 90%;
+    box-shadow: var(--shadow-lg);
+}
+
+.login-form h2 {
+    margin-bottom: var(--spacing-sm);
+    text-align: center;
+}
+
+.login-info {
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: var(--spacing-sm);
+    text-align: center;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: var(--spacing-xs);
+    color: var(--color-text);
+}
+
+.form-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+}
+
+.category-input-wrapper {
+    position: relative;
+}
+
+.input {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 1rem;
+    background: var(--color-bg-secondary);
+    transition: border-color 0.2s ease;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.input-large {
+    font-size: 1.25rem;
+    padding: var(--spacing-md);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.btn-link:hover {
+    color: var(--color-accent);
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    color: white;
+}
+
+.btn-small {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.75rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-accent-light);
+    color: var(--color-accent);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-small:hover {
+    background: var(--color-accent);
+    color: white;
+}
+
+.btn-small.btn-danger {
+    background: #fce4e4;
+    color: #dc3545;
+}
+
+.btn-small.btn-danger:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* Admin Navbar */
+.admin-navbar {
+    background: var(--color-text);
+}
+
+.admin-navbar .logo {
+    color: white;
+}
+
+.admin-navbar .nav-links a,
+.admin-navbar .nav-links button {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.admin-navbar .nav-links a:hover,
+.admin-navbar .nav-links button:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Admin Main */
+.admin-main {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: var(--spacing-xl) var(--spacing-md);
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.stat-card {
+    background: var(--color-bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    border: 1px solid var(--color-border-light);
+}
+
+.stat-number {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    font-family: var(--font-serif);
+}
+
+.stat-label {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Tabs */
+.admin-tabs {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: var(--spacing-sm);
+}
+
+.tab-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: var(--color-text);
+    background: var(--color-accent-light);
+}
+
+.tab-btn.active {
+    color: var(--color-accent);
+    background: var(--color-accent-light);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Table */
+.table-filters {
+    margin-bottom: var(--spacing-md);
+}
+
+.table-container {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    overflow: hidden;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.admin-table th {
+    background: var(--color-bg);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+}
+
+.admin-table tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tr:hover {
+    background: var(--color-bg);
+}
+
+.admin-table .actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-block;
+    padding: 2px var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-published {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-draft {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* Categories */
+.category-form {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+.category-form .input {
+    flex: 1;
+}
+
+.categories-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.category-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-light);
+}
+
+.category-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.category-count {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}
+
+/* No Data / Loading */
+.no-data,
+.loading {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-muted);
+}
+
+/* Editor Page */
+.editor-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-lg) var(--spacing-md);
+}
+
+.editor-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.editor-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.editor-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: var(--spacing-lg);
+}
+
+.editor-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Quill Editor Customization */
+#editor-container {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+}
+
+#editor {
+    min-height: 500px;
+    font-family: var(--font-sans);
+    font-size: 1.125rem;
+    line-height: 1.8;
+}
+
+/* Editor Wrapper with Fullscreen Support */
+.editor-wrapper {
+    position: relative;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Fullscreen button in Quill toolbar */
+.ql-fullscreen-group {
+    float: right !important;
+    margin-right: 0 !important;
+}
+
+.ql-fullscreen {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px 5px;
+    color: #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ql-fullscreen:hover {
+    color: #06c;
+}
+
+.ql-fullscreen svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Fullscreen Mode */
+.editor-wrapper.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    border-radius: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg);
+}
+
+.editor-wrapper.fullscreen .ql-toolbar {
+    flex-shrink: 0;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border) !important;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.editor-wrapper.fullscreen .ql-container {
+    flex: 1;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.editor-wrapper.fullscreen .ql-editor {
+    min-height: calc(100vh - 60px);
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-xl) var(--spacing-lg);
+}
+
+.editor-wrapper.fullscreen #editor {
+    min-height: auto;
+}
+
+/* Fullscreen overlay backdrop */
+body.editor-fullscreen-active {
+    overflow: hidden;
+}
+
+.ql-toolbar {
+    border: none !important;
+    border-bottom: 1px solid var(--color-border) !important;
+    background: var(--color-bg);
+}
+
+.ql-container {
+    border: none !important;
+    font-family: var(--font-sans);
+}
+
+.ql-editor {
+    padding: var(--spacing-lg);
+}
+
+.ql-editor h1 {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+}
+
+.ql-editor h2 {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+}
+
+.ql-editor h3 {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+}
+
+/* Sidebar */
+.editor-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.sidebar-card {
+    background: var(--color-bg-secondary);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+}
+
+.sidebar-card h3 {
+    font-size: 1rem;
+    margin-bottom: var(--spacing-md);
+    color: var(--color-text);
+}
+
+/* Toast Notifications */
+.toast {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--color-text);
+    color: white;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1001;
+}
+
+.toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-success {
+    background: #28a745;
+}
+
+.toast-error {
+    background: #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .editor-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .editor-sidebar {
+        order: -1;
+    }
+    
+    .admin-header {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        align-items: flex-start;
+    }
+    
+    .editor-header {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        align-items: flex-start;
+    }
+    
+    .editor-actions {
+        width: 100%;
+    }
+    
+    .editor-actions .btn {
+        flex: 1;
+    }
+    
+    .category-form {
+        flex-direction: column;
+    }
+}

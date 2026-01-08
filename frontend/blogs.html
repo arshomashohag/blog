@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Posts - Blog</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">✦ Blog</a>
+            <ul class="nav-links">
+                <li><a href="/blogs.html" class="active">All Posts</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">All Posts</h1>
+            <p class="page-subtitle">Explore all articles and stories</p>
+        </header>
+
+        <section class="filters">
+            <div class="filter-container">
+                <label for="category-filter">Filter by category:</label>
+                <select id="category-filter" class="filter-select">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="posts-section">
+            <div id="posts-list" class="posts-list">
+                <!-- Posts loaded dynamically -->
+            </div>
+            <div id="loading" class="loading">Loading posts...</div>
+            <div id="no-posts" class="no-posts" style="display: none;">No posts found.</div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 Blog. Crafted with care.</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const postsList = document.getElementById('posts-list');
+            const loading = document.getElementById('loading');
+            const noPosts = document.getElementById('no-posts');
+            const categoryFilter = document.getElementById('category-filter');
+
+            async function loadPosts(category = '') {
+                loading.style.display = 'block';
+                noPosts.style.display = 'none';
+                postsList.innerHTML = '';
+
+                try {
+                    const posts = await BlogAPI.getPosts(50, category);
+                    loading.style.display = 'none';
+
+                    if (posts.length === 0) {
+                        noPosts.style.display = 'block';
+                        return;
+                    }
+
+                    postsList.innerHTML = posts.map(post => `
+                        <article class="post-list-item">
+                            <div class="post-list-content">
+                                <div class="post-list-meta">
+                                    <span class="category-badge">${post.category || 'Uncategorized'}</span>
+                                    <span class="post-date">${formatDate(post.published_at)}</span>
+                                </div>
+                                <h2 class="post-list-title">${escapeHtml(post.title)}</h2>
+                                <p class="post-list-excerpt">${escapeHtml(post.excerpt || '')}</p>
+                            </div>
+                            <a href="/blog.html?id=${post.id}" class="btn btn-outline">Read</a>
+                        </article>
+                    `).join('');
+                } catch (error) {
+                    console.error('Error loading posts:', error);
+                    loading.style.display = 'none';
+                    noPosts.textContent = 'Error loading posts. Please try again.';
+                    noPosts.style.display = 'block';
+                }
+            }
+
+            async function loadCategories() {
+                try {
+                    const categories = await BlogAPI.getCategories();
+                    categories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.name;
+                        option.textContent = `${cat.name} (${cat.post_count})`;
+                        categoryFilter.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading categories:', error);
+                }
+            }
+
+            categoryFilter.addEventListener('change', () => {
+                loadPosts(categoryFilter.value);
+            });
+
+            await loadCategories();
+            await loadPosts();
+        });
+    </script>
+</body>
+</html>

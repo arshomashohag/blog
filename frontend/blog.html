@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading... - Blog</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">✦ Blog</a>
+            <ul class="nav-links">
+                <li><a href="/blogs.html">All Posts</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <article class="blog-article">
+            <header class="article-header">
+                <a href="/blogs.html" class="back-link">← Back to all posts</a>
+                <div class="article-meta">
+                    <span id="article-category" class="category-badge"></span>
+                    <span id="article-date" class="post-date"></span>
+                </div>
+                <h1 id="article-title" class="article-title">Loading...</h1>
+            </header>
+            
+            <div id="article-content" class="article-content">
+                <div class="loading">Loading article...</div>
+            </div>
+
+            <footer class="article-footer">
+                <a href="/blogs.html" class="btn btn-outline">← More Articles</a>
+            </footer>
+        </article>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 Blog. Crafted with care.</p>
+        </div>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('id');
+
+            if (!postId) {
+                window.location.href = '/blogs.html';
+                return;
+            }
+
+            try {
+                const post = await BlogAPI.getPost(postId);
+                
+                document.title = `${post.title} - Blog`;
+                document.getElementById('article-title').textContent = post.title;
+                document.getElementById('article-category').textContent = post.category || 'Uncategorized';
+                document.getElementById('article-date').textContent = formatDate(post.published_at);
+                document.getElementById('article-content').innerHTML = post.content_html;
+            } catch (error) {
+                console.error('Error loading post:', error);
+                document.getElementById('article-title').textContent = 'Post Not Found';
+                document.getElementById('article-content').innerHTML = `
+                    <p>Sorry, we couldn't find this article.</p>
+                    <a href="/blogs.html" class="btn btn-primary">Browse All Posts</a>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
