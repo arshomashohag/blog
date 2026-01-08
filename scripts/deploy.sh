@@ -1,5 +1,6 @@
 #!/bin/bash
 # Deployment script for the blog platform
+# Usage: ./deploy.sh [dev|prod] [--skip-frontend] [--skip-infra] [--frontend-only]
 
 set -e
 
@@ -10,7 +11,57 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Default environment
+ENVIRONMENT="${1:-dev}"
+SKIP_FRONTEND=false
+SKIP_INFRA=false
+FRONTEND_ONLY=false
+
+# Parse arguments
+for arg in "$@"; do
+    case $arg in
+        dev|prod)
+            ENVIRONMENT="$arg"
+            ;;
+        --skip-frontend)
+            SKIP_FRONTEND=true
+            ;;
+        --skip-infra)
+            SKIP_INFRA=true
+            ;;
+        --frontend-only)
+            FRONTEND_ONLY=true
+            SKIP_INFRA=true
+            ;;
+        --help|-h)
+            echo "Usage: ./deploy.sh [dev|prod] [options]"
+            echo ""
+            echo "Environments:"
+            echo "  dev     Deploy to development environment (default)"
+            echo "  prod    Deploy to production environment"
+            echo ""
+            echo "Options:"
+            echo "  --skip-frontend    Skip frontend upload"
+            echo "  --skip-infra       Skip infrastructure deployment"
+            echo "  --frontend-only    Only upload frontend (alias for --skip-infra)"
+            echo "  --help, -h         Show this help message"
+            exit 0
+            ;;
+    esac
+done
+
+# Validate environment
+if [[ "$ENVIRONMENT" != "dev" && "$ENVIRONMENT" != "prod" ]]; then
+    echo -e "${RED}[ERROR]${NC} Invalid environment: $ENVIRONMENT. Use 'dev' or 'prod'."
+    exit 1
+fi
+
+# Set environment-specific files
+BACKEND_CONFIG="backend-${ENVIRONMENT}.hcl"
+TFVARS_FILE="terraform.${ENVIRONMENT}.tfvars"
 
 echo_info() {
     echo -e "${GREEN}[INFO]${NC} $1"
@@ -22,6 +73,10 @@ echo_warn() {
 
 echo_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+echo_env() {
+    echo -e "${BLUE}[${ENVIRONMENT^^}]${NC} $1"
 }
 
 # Check prerequisites
@@ -38,13 +93,26 @@ check_prerequisites() {
         exit 1
     fi
     
-    # Get AWS profile from tfvars
     cd "$PROJECT_ROOT/terraform"
-    AWS_PROFILE_NAME=$(grep -E "^aws_profile" terraform.tfvars 2>/dev/null | sed 's/.*=.*"\(.*\)"/\1/' | tr -d ' ')
+    
+    # Check for required files
+    if [ ! -f "$BACKEND_CONFIG" ]; then
+        echo_error "Backend config not found: $BACKEND_CONFIG"
+        exit 1
+    fi
+    
+    if [ ! -f "$TFVARS_FILE" ]; then
+        echo_error "Variables file not found: $TFVARS_FILE"
+        echo_warn "Create $TFVARS_FILE with your environment configuration."
+        exit 1
+    fi
+    
+    # Get AWS profile from tfvars
+    AWS_PROFILE_NAME=$(grep -E "^aws_profile" "$TFVARS_FILE" 2>/dev/null | sed 's/.*=.*"\(.*\)"/\1/' | tr -d ' ')
     
     if [ -n "$AWS_PROFILE_NAME" ]; then
         export AWS_PROFILE="$AWS_PROFILE_NAME"
-        echo_info "Using AWS profile: $AWS_PROFILE_NAME"
+        echo_env "Using AWS profile: $AWS_PROFILE_NAME"
     fi
     
     # Check if SSO session is valid
@@ -60,7 +128,7 @@ check_prerequisites() {
                 exit 1
             fi
         else
-            echo_error "Please configure AWS credentials or set aws_profile in terraform.tfvars"
+            echo_error "Please configure AWS credentials or set aws_profile in $TFVARS_FILE"
             exit 1
         fi
     fi
@@ -103,21 +171,24 @@ install_dependencies() {
     echo_info "Dependencies installed to .build/ directory."
 }
 
-# Deploy infrastructure
-deploy_infrastructure() {
-    echo_info "Deploying infrastructure..."
+# Initialize Terraform with correct backend
+init_terraform() {
+    echo_env "Initializing Terraform with backend: $BACKEND_CONFIG"
     
     cd "$PROJECT_ROOT/terraform"
     
-    # Check for tfvars file
-    if [ ! -f "terraform.tfvars" ]; then
-        echo_error "terraform.tfvars not found!"
-        echo_warn "Copy terraform.tfvars.example to terraform.tfvars and update the values."
-        exit 1
-    fi
+    terraform init -backend-config="$BACKEND_CONFIG" -reconfigure
     
-    terraform init
-    terraform plan -out=tfplan
+    echo_info "Terraform initialized."
+}
+
+# Deploy infrastructure
+deploy_infrastructure() {
+    echo_env "Deploying infrastructure..."
+    
+    cd "$PROJECT_ROOT/terraform"
+    
+    terraform plan -var-file="$TFVARS_FILE" -out=tfplan
     
     echo ""
     read -p "Do you want to apply this plan? (y/n) " -n 1 -r
@@ -135,9 +206,9 @@ deploy_infrastructure() {
     echo_info "Infrastructure deployed."
 }
 
-# Upload frontend files
+# Upload frontend files (Vue SPA)
 upload_frontend() {
-    echo_info "Uploading frontend files..."
+    echo_env "Uploading frontend files..."
     
     cd "$PROJECT_ROOT/terraform"
     
@@ -150,11 +221,27 @@ upload_frontend() {
     
     echo_info "Uploading to bucket: $S3_BUCKET"
     
-    # Sync frontend files
-    aws s3 sync "$PROJECT_ROOT/frontend" "s3://$S3_BUCKET" \
-        --delete \
-        --exclude ".DS_Store" \
-        --exclude "*.map"
+    # Build Vue frontend
+    cd "$PROJECT_ROOT/frontend-vue"
+    
+    if [ -f "package.json" ]; then
+        echo_info "Building Vue frontend..."
+        npm install
+        npm run build
+        
+        # Sync Vue dist files
+        aws s3 sync "dist" "s3://$S3_BUCKET" \
+            --delete \
+            --exclude ".DS_Store" \
+            --exclude "*.map"
+    else
+        echo_warn "No package.json found in frontend-vue, uploading static frontend..."
+        # Fallback to static frontend
+        aws s3 sync "$PROJECT_ROOT/frontend" "s3://$S3_BUCKET" \
+            --delete \
+            --exclude ".DS_Store" \
+            --exclude "*.map"
+    fi
     
     # Set correct content types
     aws s3 cp "s3://$S3_BUCKET" "s3://$S3_BUCKET" --recursive \
@@ -200,6 +287,7 @@ print_info() {
     echo ""
     echo "======================================"
     echo "       DEPLOYMENT COMPLETE!"
+    echo "       Environment: ${ENVIRONMENT^^}"
     echo "======================================"
     echo ""
     
@@ -219,14 +307,27 @@ main() {
     echo ""
     echo "======================================"
     echo "    BLOG PLATFORM DEPLOYMENT"
+    echo "    Environment: ${ENVIRONMENT^^}"
     echo "======================================"
     echo ""
     
     check_prerequisites
-    install_dependencies
-    deploy_infrastructure
-    upload_frontend
-    invalidate_cache
+    
+    if [ "$FRONTEND_ONLY" = false ] && [ "$SKIP_INFRA" = false ]; then
+        install_dependencies
+        init_terraform
+        deploy_infrastructure
+    fi
+    
+    if [ "$SKIP_FRONTEND" = false ]; then
+        # Need to init terraform to get outputs even if skipping infra
+        if [ "$SKIP_INFRA" = true ]; then
+            init_terraform
+        fi
+        upload_frontend
+        invalidate_cache
+    fi
+    
     print_info
 }
 
