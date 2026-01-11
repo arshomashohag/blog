@@ -75,8 +75,11 @@ echo_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Uppercase environment name (portable)
+ENV_UPPER=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
+
 echo_env() {
-    echo -e "${BLUE}[${ENVIRONMENT^^}]${NC} $1"
+    echo -e "${BLUE}[${ENV_UPPER}]${NC} $1"
 }
 
 # Check prerequisites
@@ -287,7 +290,7 @@ print_info() {
     echo ""
     echo "======================================"
     echo "       DEPLOYMENT COMPLETE!"
-    echo "       Environment: ${ENVIRONMENT^^}"
+    echo "       Environment: ${ENV_UPPER}"
     echo "======================================"
     echo ""
     
@@ -307,7 +310,7 @@ main() {
     echo ""
     echo "======================================"
     echo "    BLOG PLATFORM DEPLOYMENT"
-    echo "    Environment: ${ENVIRONMENT^^}"
+    echo "    Environment: ${ENV_UPPER}"
     echo "======================================"
     echo ""
     
